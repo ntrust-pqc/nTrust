@@ -1,0 +1,9 @@
+[package]
+name = "ntru-rust"
+version = "0.1.0"
+authors = ["zhenfei <zhenfei.zhang@hotmail.com>"]
+edition = "2018"
+
+[dependencies]
+rand = ""
+rand_chacha=""
