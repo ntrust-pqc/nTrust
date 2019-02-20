@@ -6,9 +6,9 @@ use rand_chacha::ChaChaRng;
 mod ipoly;
 mod param;
 mod upoly;
-use ipoly::SignedPolynomial;
+use ipoly::{SignedPolyArith, SignedPolynomial};
 use param::Param;
-use upoly::UnsignedPolynomial;
+use upoly::{UnsignedPolynomial, UnsignedPolyArith};
 fn main() {
     let seed = [4u8; 32];
     let domain = "fdom".to_string();
