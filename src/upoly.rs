@@ -49,16 +49,14 @@ impl UnsignedPolynomial {
         }
     }
 
-    pub fn sample_t(&mut self, p: Param, seed: [u8; 32], domain: String) {
-        let mut t = SignedPolynomial::zero(p.get_param_n());
-        t.sample_t(p, seed, domain);
-        self.from_signed(t);
+    pub fn sample_t(p: Param, seed: [u8; 32], domain: String) -> Self {
+        let t = SignedPolynomial::sample_t(p, seed, domain);
+        Self::from_signed(t)
     }
 
-    pub fn sample_t_plus(&mut self, p: Param, seed: [u8; 32], domain: String) {
-        let mut t = SignedPolynomial::zero(p.get_param_n());
-        t.sample_t_plus(p, seed, domain);
-        self.from_signed(t);
+    pub fn sample_t_plus(p: Param, seed: [u8; 32], domain: String) -> Self {
+        let t = SignedPolynomial::sample_t_plus(p, seed, domain);
+        Self::from_signed(t)
     }
 
     pub fn into_signed(&mut self) -> SignedPolynomial {
@@ -70,13 +68,15 @@ impl UnsignedPolynomial {
         s
     }
 
-    pub fn from_signed(&mut self, s: SignedPolynomial) {
-        self.degree = s.degree;
-        self.modulus = s.modulus;
-        self.coefficient = Vec::new();
-        for i in 0..self.degree {
-            self.coefficient.push(down(s.coefficient[i], self.modulus));
+    pub fn from_signed(s: SignedPolynomial) -> Self {
+        let mut t = UnsignedPolynomial::zero(s.degree);
+        //        self.degree = s.degree;
+        t.modulus = s.modulus;
+        t.coefficient = Vec::new();
+        for i in 0..t.degree {
+            t.coefficient.push(down(s.coefficient[i], t.modulus));
         }
+        t
     }
 
     pub fn is_trinary(&mut self) -> bool {
@@ -112,6 +112,33 @@ impl fmt::Debug for UnsignedPolynomial {
              ================================\n",
             self.degree, self.modulus, self.coefficient
         )
+    }
+}
+
+impl PartialEq for UnsignedPolynomial {
+    fn eq(&self, other: &UnsignedPolynomial) -> bool {
+        if self.degree != other.degree {
+            return false;
+        } else if self.modulus != other.modulus {
+            return false;
+        } else if self.coefficient.len() != other.coefficient.len() {
+            return false;
+        }
+        for i in 0..self.degree {
+            if self.coefficient[i] != other.coefficient[i] {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+#[test]
+fn test_conversion_upoly_ipoly() {
+    for _ in 0..100 {
+        let mut a = UnsignedPolynomial::zero(50);
+        let b = UnsignedPolynomial::from_signed(a.into_signed());
+        assert_eq!(a, b, "conversion between upoly and ipoly failed");
     }
 }
 

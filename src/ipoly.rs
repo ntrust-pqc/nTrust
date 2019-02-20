@@ -5,14 +5,12 @@ use rand_chacha::ChaChaRng;
 
 use std::fmt;
 
-
 #[derive(Clone)]
 pub struct SignedPolynomial {
     pub coefficient: Vec<i16>,
     pub degree: usize,
     pub modulus: u16,
 }
-
 
 impl SignedPolynomial {
     pub fn init() -> Self {
@@ -42,14 +40,15 @@ impl SignedPolynomial {
         result
     }
 
-    pub fn sample_t(&mut self, p: Param, seed: [u8; 32], _domain: String) {
-        self.modulus = p.get_q();
-        self.degree = p.get_param_n();
-        self.coefficient = vec![0; self.degree];
+    pub fn sample_t(p: Param, seed: [u8; 32], _domain: String) -> Self {
+        let mut res = Self::init();
+        res.modulus = p.get_q();
+        res.degree = p.get_param_n();
+        res.coefficient = vec![0; res.degree];
 
         // todo: implement domain seperation
         let mut prng = ChaChaRng::from_seed(seed);
-        let degree = self.degree - 2;
+        let degree = res.degree - 2;
         let round = degree / 32;
         for i in 0..round {
             let mut t = prng.next_u64();
@@ -57,7 +56,7 @@ impl SignedPolynomial {
                 let b1 = (t & 1) as i16;
                 t >>= 1;
 
-                self.coefficient[i * 32 + j] = ((t & 1) as i16) - b1;
+                res.coefficient[i * 32 + j] = ((t & 1) as i16) - b1;
                 t >>= 1;
             }
         }
@@ -65,17 +64,19 @@ impl SignedPolynomial {
         for i in round * 32..degree {
             let b1 = (t & 1) as i16;
             t >>= 1;
-            self.coefficient[i] = ((t & 1) as i16) - b1;
+            res.coefficient[i] = ((t & 1) as i16) - b1;
             t >>= 1;
         }
+        res
     }
 
-    pub fn sample_t_plus(&mut self, p: Param, seed: [u8; 32], domain: String) {
-        self.sample_t(p, seed, domain);
-        let s = if self.get_t() < 0 { -1 } else { 1 };
-        for i in 0..(self.degree >> 1) {
-            self.coefficient[i << 1] *= s;
+    pub fn sample_t_plus(p: Param, seed: [u8; 32], domain: String) -> Self {
+        let mut res = Self::sample_t(p, seed, domain);
+        let s = if res.get_t() < 0 { -1 } else { 1 };
+        for i in 0..(res.degree >> 1) {
+            res.coefficient[i << 1] *= s;
         }
+        res
     }
 
     fn get_t(&self) -> i16 {
@@ -128,8 +129,7 @@ fn test_sample_t_signed() {
     let domain = "test".to_string();
     for i in 0..100 {
         let seed = [i as u8; 32];
-        let mut f = SignedPolynomial::zero(p.get_param_n());
-        f.sample_t(p.clone(), seed, domain.clone());
+        let mut f = SignedPolynomial::sample_t(p.clone(), seed, domain.clone());
         assert!(f.is_trinary(), "f is not trinary");
         assert!(
             f.coefficient[f.degree - 1] == 0,
@@ -156,8 +156,7 @@ fn test_sample_t_plus_signed() {
     let domain = "test".to_string();
     for i in 0..100 {
         let seed = [i as u8; 32];
-        let mut f = SignedPolynomial::zero(p.get_param_n());
-        f.sample_t_plus(p.clone(), seed, domain.clone());
+        let mut f = SignedPolynomial::sample_t_plus(p.clone(), seed, domain.clone());
         assert!(f.is_trinary(), "f is not trinary");
         assert!(
             f.coefficient[f.degree - 1] == 0,

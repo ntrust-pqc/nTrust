@@ -30,7 +30,7 @@ fn main() {
     println!("{:?}", f);
 
     //    let mut f = SignedPolynomial::zero(p.get_param_n());
-    f.sample_t_plus(p, seed, domain);
+    let f = SignedPolynomial::sample_t_plus(p, seed, domain);
     println!("{:?}", f);
     println!("Hello, world!");
 }
